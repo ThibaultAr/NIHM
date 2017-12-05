@@ -10,7 +10,7 @@ float x[];
 float y[];
 
 void readData() {
-  String[] lines = loadStrings("./villes.tsv");
+  String[] lines = loadStrings("../villes.tsv");
   parseInfo(lines[0]);
   x = new float[totalCount];
   y = new float[totalCount];
