@@ -1,0 +1,134 @@
+---
+title: "TP RMD"
+subtitle: Arloing Thibault
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("gplots")
+library("gmodels")
+library("reshape")
+library("ez")
+```
+
+##Premier Pas
+```{r}
+v = c(12, .4, 5, 2, 50, 8, 3, 1, 4, .25)
+quantile(v, probs=c(0.9))
+```
+
+##Graphiques
+```{r}
+v = c(12, .4, 5, 2, 50, 8, 3, 1, 4, .25)
+v2 = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+boxplot(v, v2)
+barplot(v, v2)
+```
+
+##Importation des données à partir d'un fichiers
+```{r}
+data = read.table("data.txt", header=TRUE, sep=",")
+participant2SurfPad=subset(data,Participant==2 & Technique=="SurfPad")
+mean(participant2SurfPad[,"Time"])
+```
+
+###Q3
+```{r}
+moyTech = function(data, technique) {
+  t = subset(data, Technique==technique)
+  return(mean(t[,"Time"]))
+}
+```
+Tests de fonctionnement
+```{r}
+moyTech(data, "SurfPad")
+moyTech(data, "SemPoint")
+```
+
+###Q4
+```{r}
+techniques=unique(data$Technique)
+moyTime = sapply(techniques, function(x)drop(moyTech(data, x)))
+```
+
+###Q5
+```{r}
+barplot(moyTime, names.arg = techniques, legend.text="Temps moyen")
+```
+
+###Q6
+```{r}
+dataWithoutErr = subset(data, Err!=1)
+```
+
+###Q7
+```{r}
+confianceInter = function(data, technique) {
+  t = subset(data, Technique==technique)
+  return(ci(t[,"Time"]))
+}
+```
+
+###Q8
+```{r}
+moyTime = sapply(techniques, function(x)drop(moyTech(dataWithoutErr, x)))
+confiance = sapply(techniques, function(x)drop(confianceInter(dataWithoutErr, x)))
+ciLower = confiance["CI lower",]
+ciUpper = confiance["CI upper",]
+ciLower
+ciUpper
+```
+
+```{r}
+barplot2(moyTime, names.arg = techniques, legend.text = "Temps Moyen"
+         , ci.l = ciLower, ci.u = ciUpper, plot.ci = TRUE)
+```
+
+##ANOVA
+```{r}
+# Chargement des donnees
+data = read.table("data.txt", header=TRUE, sep=",")
+
+# On ne garde que ce qui nous interesse
+filteredData = subset(data, (Err==0), select = c(Participant, Block, Technique,
+                      A, W, density, Time))
+
+# Aggregation des donnees pour ne conserver qu’une valeur par condition
+attach(filteredData)
+aggdata = aggregate(filteredData$Time, by=list(Participant,Block,Technique,W, density),
+                    FUN=mean)
+detach(filteredData)
+
+# Reecriture des noms de colonnes
+colnames(aggdata) = c("Participant","Block","Technique","W", "density", "Time")
+
+# Conversion des donnees au format long
+data.long = melt(aggdata, id = c("Participant","Block","Technique","W","density","Time"))
+
+# On specifie les variables independantes
+data.long$Block = factor(data.long$Block)
+data.long$Technique = factor(data.long$Technique)
+data.long$W = factor(data.long$W)
+data.long$density = factor(data.long$density)
+
+# L’ANOVA:
+print(ezANOVA(data.long, dv=.(Time), wid=.(Participant), within=.(Technique,W,density)))
+
+# Analyse post-hoc avec ajustement de Bonferroni
+attach(data.long)
+print(pairwise.t.test(Time, interaction(Technique), p.adj = "bonf"))
+print(pairwise.t.test(Time, interaction(Technique, density), p.adj = "bonf"))
+detach(data.long)
+```
+
+###Q9
+
+L'effet significatif de ***Technique*** ne permet pas de conclure que ***SurfPad*** est la meilleure technique. En effet, comme l'experience a été faite en intra-sujet, l'étude des intéractions entre les différentes techniques.
+
+###Q10
+```{r}
+density = unique(data[,"density"])
+density
+```
