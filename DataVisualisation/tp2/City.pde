@@ -22,5 +22,4 @@ class City {
     ellipse(x, y, mapPop(), mapPop());
     //set((int) x, (int) y, black);
   }
-  // put a drawing function in here and call from main drawing loop }
 }

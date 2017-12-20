@@ -5,9 +5,12 @@ int minPopulation, maxPopulation;
 int minSurface, maxSurface;
 int minAltitude, maxAltitude;
 float minDensity, maxDensity;
+int minPopulationToDisplay = 2048;
 int X = 1;
 int Y = 2;
 City cities[];
+
+City lastPointedCity;
 
 void readData() {
   String[] lines = loadStrings("../villes.tsv");
@@ -63,6 +66,67 @@ void setup () {
 
 void draw () {
   background(255);
-  for (int i = 0; i < totalCount; i++)
-    cities[i].drawCity();
+  fill(0);
+  text(minPopulationToDisplay, 10, 10);
+  for (int i = 0; i < totalCount; i++) {
+    if(cities[i].population > minPopulationToDisplay)
+      cities[i].drawCity();
+  }
+  
+  fill(255);
+  stroke(0);
+  rect(50, 725, 700, 50);
+  fill(0);
+  if(minPopulationToDisplay <= 0) minPopulationToDisplay = 1;
+  if(minPopulationToDisplay > 2500000) minPopulationToDisplay = 2500000;
+  float widthRect = ((float) log(minPopulationToDisplay) / (float) log(2500000)) * 700;
+  rect(50, 725, widthRect, 50);
+  redraw();
+}
+
+void keyPressed() {
+  if(keyCode == UP)
+    minPopulationToDisplay *= 2; 
+  if(keyCode == DOWN)
+    minPopulationToDisplay /= 2;
+  redraw();
+}
+
+void mouseMoved(){
+  City city = pick(mouseX, mouseY);
+  if(city != null && city.population > minPopulationToDisplay) {
+    if(city != lastPointedCity)
+      println(city.name); 
+    if(lastPointedCity != null)
+      lastPointedCity.isSelected = false;
+    city.isSelected = true;
+    lastPointedCity = city;
+  }
+  if(city==null && lastPointedCity != null) {
+    lastPointedCity.isSelected = false;
+    lastPointedCity.isClicked = false;
+  }
+  redraw();
+}
+
+void mousePressed() {
+  if(lastPointedCity != null)
+    lastPointedCity.isClicked = true;
+}
+
+void mouseReleased() {
+  if(lastPointedCity != null)
+    lastPointedCity.isClicked = false;  
+}
+
+City pick(int px, int py) {
+  for(int i = cities.length - 1; i>=0; i--) {
+    if(cities[i].contains(px, py))
+      return cities[i];
+  }
+  return null;
+}
+
+float mapMinPop(float val) {
+  return map(val, 1, 2500000, 0, 650); 
 }
